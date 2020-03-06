@@ -32,7 +32,7 @@ class SNCompanionCollision(object):
         return paramters:
             angular dependence factor
         """
-        theta_rad = theta * 0.01745
+        theta_rad = theta * np.pi/180
         return (0.5 * np.cos(theta_rad) + 0.5) *\
             (0.14 * theta_rad * theta_rad - 0.4 * theta_rad + 1)
         
@@ -130,10 +130,14 @@ class Spectrum(object):
                                                fill_value=0)(wv)
         return integrate.quad(func, self.wavelength.min(), self.wavelength.max())[0]
 
-def ObservedMagnitude(model, theta, filter_curve, 
-                      t = 1.0, redshift=0, mu=0,
-                      local_EBV=0, galactic_EBV=0,
-                      ):
+def ObservedFlux(model, theta, filter_curve, 
+                 t = 1.0, redshift=0, mu=0,
+                 local_EBV=0, galactic_EBV=0,
+                 return_mag=False):
+    '''
+    Calculate flux in Jy given input model parameters
+                 
+    '''
     wv = filter_curve.wavelength / (1 + redshift)
     spec_func = model.Spectrum(t, theta)
     spec = Spectrum(wv, spec_func(wv))
@@ -144,4 +148,7 @@ def ObservedMagnitude(model, theta, filter_curve,
     spec.extinction(galactic_EBV)
     obs_flux = spec.SyntheticPhotometry(filter_curve)  # F_lambda
     obs_flux *= filter_curve.wavelength_eff * (filter_curve.wavelength_eff * 1e-8 / const.c.cgs.value) * 1e23  # F_nu in Jy
-    return -2.5 * np.log10(obs_flux / 3631)  # AB mag
+    if return_mag:
+        return -2.5 * np.log10(obs_flux / 3631)  # AB mag
+    else:
+        return obs_flux
